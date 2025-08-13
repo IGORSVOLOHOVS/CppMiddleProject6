@@ -1,4 +1,5 @@
 #pragma once
+#include "queue.hpp"
 #include "queue/bounded_queue.hpp"
 #include "queue/unbounded_queue.hpp"
 #include "types.hpp"
@@ -15,14 +16,18 @@
 namespace dispatcher::queue {
 
 class PriorityQueue {
-    // здесь ваш код
+    std::flat_map<TaskPriority, std::unique_ptr<IQueue>> tasks_queue_;
+    std::atomic<bool> stop_flag{false};
+    std::condition_variable not_empty_cv_{};
+    std::condition_variable not_full_cv_{};
+    std::mutex m_{};
 public:
-    // explicit PriorityQueue(?);
+    explicit PriorityQueue(std::flat_map<TaskPriority, QueueOptions> tasks_options);
 
-    void push(TaskPriority priority, std::function<void()> task);
+    void push(TaskPriority priority, Task task);
     // block on pop until shutdown is called
     // after that return std::nullopt on empty queue
-    std::optional<std::function<void()>> pop();
+    std::optional<Task> pop();
 
     void shutdown();
 
