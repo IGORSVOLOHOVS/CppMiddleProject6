@@ -5,6 +5,7 @@
 #include "types.hpp"
 
 #include <atomic>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <memory>
@@ -12,17 +13,18 @@
 #include <optional>
 #include <stdexcept>
 #include <unordered_map>
+#include <condition_variable>
+#include <flat_map>
 
 namespace dispatcher::queue {
 
 class PriorityQueue {
-    std::flat_map<TaskPriority, std::unique_ptr<IQueue>> tasks_queue_;
-    std::atomic<bool> stop_flag{false};
-    std::condition_variable not_empty_cv_{};
-    std::condition_variable not_full_cv_{};
-    std::mutex m_{};
+    std::map<TaskPriority, std::unique_ptr<IQueue>> queues_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    std::atomic<bool> is_shutdown_{false};
 public:
-    explicit PriorityQueue(std::flat_map<TaskPriority, QueueOptions> tasks_options);
+    explicit PriorityQueue(const std::map<TaskPriority, QueueOptions>& options);
 
     void push(TaskPriority priority, Task task);
     // block on pop until shutdown is called
@@ -31,7 +33,7 @@ public:
 
     void shutdown();
 
-    ~PriorityQueue();
+    ~PriorityQueue() = default;
 };
 
 }  // namespace dispatcher::queue

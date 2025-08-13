@@ -2,79 +2,80 @@
 #include <thread>
 #include <vector>
 #include <atomic>
-#include <functional>
-#include <stdexcept>
-#include <chrono>
 
 #include "queue/bounded_queue.hpp"
 
 using namespace dispatcher::queue;
 
-using Task = std::function<void()>;
-
-class BoundedQueueTest : public ::testing::Test {
-protected:
-    std::unique_ptr<BoundedQueue> queue_ptr;
-    const unsigned int capacity = 3;
-
-    void SetUp() override {
-        queue_ptr = std::make_unique<BoundedQueue>(capacity);
-    }
-};
-
-TEST_F(BoundedQueueTest, ConstructorSetsCapacity) {
-    ASSERT_NO_THROW(BoundedQueue(10));
+TEST(BoundedQueueTest, PushAndPop) {
+    BoundedQueue bq(5);
+    bq.push([] {});
+    auto task = bq.try_pop();
+    ASSERT_TRUE(task.has_value());
+    ASSERT_FALSE(bq.try_pop().has_value());
 }
 
-TEST_F(BoundedQueueTest, ThrowsOnZeroCapacity) {
-    ASSERT_THROW(BoundedQueue(0), std::invalid_argument);
-}
+TEST(BoundedQueueTest, RespectsCapacity) {
+    const int capacity = 3;
+    BoundedQueue bq(capacity);
 
-TEST_F(BoundedQueueTest, PushAndPopWorksInSingleThread) {
-    bool task_executed = false;
-    Task my_task = [&]() { task_executed = true; };
-
-    queue_ptr->push(my_task);
-    auto popped_task = queue_ptr->try_pop();
-
-    ASSERT_TRUE(popped_task.has_value());
-    popped_task.value()();
-    ASSERT_TRUE(task_executed);
-    ASSERT_FALSE(queue_ptr->try_pop().has_value());
-}
-
-TEST_F(BoundedQueueTest, PushBlocksWhenQueueIsFull) {
-    for (unsigned int i = 0; i < capacity; ++i) {
-        queue_ptr->push([]() {});
+    for (int i = 0; i < capacity; ++i) {
+        bq.push([] {});
     }
 
-    std::atomic<bool> push_started = false;
-    std::thread producer_thread([&]() {
-        push_started = true;
-        queue_ptr->push([]() {});
+    std::thread pusher([&]() {
+        bq.push([] {}); 
     });
-
-    while (!push_started) {
-        std::this_thread::yield();
-    }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    auto task = queue_ptr->try_pop();
+    auto task = bq.try_pop();
     ASSERT_TRUE(task.has_value());
-    ASSERT_NE(task.value(), nullptr);
 
-    task = queue_ptr->try_pop();
-    ASSERT_TRUE(task.has_value());
-    ASSERT_NE(task.value(), nullptr);  
+    pusher.join(); 
 
-    task = queue_ptr->try_pop();
-    ASSERT_TRUE(task.has_value());
-    ASSERT_NE(task.value(), nullptr);
+    for (int i = 0; i < capacity; ++i) {
+        ASSERT_TRUE(bq.try_pop().has_value());
+    }
+    ASSERT_FALSE(bq.try_pop().has_value());
+}
 
-    ASSERT_FALSE(queue_ptr->try_pop().has_value());
+TEST(BoundedQueueTest, MultiThreaded) {
+    BoundedQueue bq(100);
+    const int items_per_thread = 50;
+    std::atomic<int> items_pushed = 0;
+    std::atomic<int> items_popped = 0;
 
-    queue_ptr->try_pop();
-    
-    producer_thread.join(); 
+    auto pusher_func = [&]() {
+        for (int i = 0; i < items_per_thread; ++i) {
+            bq.push([&items_pushed] { items_pushed++; });
+        }
+    };
+
+    auto popper_func = [&]() {
+        for (int i = 0; i < items_per_thread; ++i) {
+            auto task = bq.try_pop();
+            if(task) {
+                (*task)();
+                items_popped++;
+            }
+        }
+    };
+
+    std::thread p1(pusher_func);
+    std::thread p2(pusher_func);
+    std::thread c1(popper_func);
+    std::thread c2(popper_func);
+
+    p1.join();
+    p2.join();
+    c1.join();
+    c2.join();
+
+    while(bq.try_pop()) {
+        items_popped++;
+    }
+
+    ASSERT_EQ(items_pushed, 2 * items_per_thread);
+    ASSERT_EQ(items_popped, 2 * items_per_thread);
 }

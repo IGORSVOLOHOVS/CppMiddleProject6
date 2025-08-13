@@ -8,7 +8,7 @@ using Task = std::function<void()>;
 
 struct QueueOptions {
     bool bounded;
-    std::optional<int> capacity;
+    std::optional<unsigned> capacity;
 };
 
 class IQueue {
