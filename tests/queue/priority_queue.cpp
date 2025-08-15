@@ -3,19 +3,14 @@
 #include <vector>
 #include <atomic>
 #include <chrono>
-#include <functional>
-#include <map>
-#include <algorithm>
-#include <ranges>
 
 #include "queue/priority_queue.hpp"
 
 using namespace dispatcher;
 using namespace dispatcher::queue;
-using namespace std::chrono_literals;
 
 TEST(PriorityQueueTest, HighPriorityFirst) {
-    std::flat_map<TaskPriority, QueueOptions> options = {
+    std::map<TaskPriority, QueueOptions> options = {
         {TaskPriority::High, {false, std::nullopt}},
         {TaskPriority::Normal, {false, std::nullopt}}
     };
@@ -26,8 +21,8 @@ TEST(PriorityQueueTest, HighPriorityFirst) {
     pq.push(TaskPriority::Normal, [&] { execution_order.push_back(TaskPriority::Normal); });
     pq.push(TaskPriority::High, [&] { execution_order.push_back(TaskPriority::High); });
     
-    std::invoke(pq.pop().value());
-    std::invoke(pq.pop().value());
+    (*pq.pop())();
+    (*pq.pop())();
 
     ASSERT_EQ(execution_order.size(), 2);
     ASSERT_EQ(execution_order[0], TaskPriority::High);
@@ -38,44 +33,45 @@ TEST(PriorityQueueTest, PopBlocksOnEmpty) {
     PriorityQueue pq({{TaskPriority::Normal, {false, std::nullopt}}});
     std::atomic<bool> task_popped = false;
 
-    std::jthread t([&]() {
-        if (auto task = pq.pop()) {
-            std::invoke(task.value());
+    std::thread t([&]() {
+        auto task = pq.pop(); 
+        if (task) {
+            (*task)();
             task_popped = true;
         }
     });
 
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ASSERT_FALSE(task_popped);
 
     pq.push(TaskPriority::Normal, [] {});
+    t.join();
+    ASSERT_TRUE(task_popped);
 }
 
 TEST(PriorityQueueTest, Shutdown) {
     PriorityQueue pq({{TaskPriority::High, {false, std::nullopt}}});
     std::atomic<bool> thread_unblocked = false;
 
-    std::jthread t([&]() {
-        auto task = pq.pop();
-        ASSERT_FALSE(task.has_value());
+    std::thread t([&]() {
+        auto task = pq.pop(); 
+        ASSERT_FALSE(task.has_value()); 
         thread_unblocked = true;
     });
 
-    std::this_thread::sleep_for(50ms);
-    ASSERT_FALSE(thread_unblocked);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    ASSERT_FALSE(thread_unblocked); 
 
     pq.shutdown();
     t.join();
-    
-    ASSERT_TRUE(thread_unblocked);
+    ASSERT_TRUE(thread_unblocked); 
     ASSERT_FALSE(pq.pop().has_value());
 }
 
 TEST(PriorityQueueTest, ShutdownDrainsTasks) {
     PriorityQueue pq({{TaskPriority::Normal, {false, std::nullopt}}});
-    
-    std::ranges::for_each(std::views::iota(0, 2), 
-        [&](int){ pq.push(TaskPriority::Normal, [] {}); });
+    pq.push(TaskPriority::Normal, [] {});
+    pq.push(TaskPriority::Normal, [] {});
 
     pq.shutdown();
 
