@@ -1,38 +1,56 @@
 #include "queue/priority_queue.hpp"
-#include <algorithm>
-#include <iterator>
-#include <mutex>
-#include <stdexcept>
+#include "queue/bounded_queue.hpp"
+#include "queue/unbounded_queue.hpp"
+#include <ranges>
 
 namespace dispatcher::queue {
 
-// здесь ваш код
-PriorityQueue::PriorityQueue(std::flat_map<TaskPriority, QueueOptions> tasks_options){
-    if(tasks_queue.empty()){
-        throw std::logic_error("tasks_queue.empty()");
-    }
-
-    std::ranges::transform(tasks_options, std::inserter(tasks_queue_, tasks_queue_.end()), [](const auto& pr, const auto& opt){
-        if(opt.bounded){
-            return {pr, std::make_unique<BoundedQueue>(opt.capacity.value_or(0))};
-        }else{
-            return {pr, std::make_unique<UnboundedQueue>()};
+PriorityQueue::PriorityQueue(const std::flat_map<TaskPriority, QueueOptions>& options) {
+    std::ranges::for_each(options, [this](const auto& pair) {
+        const auto& [priority, queue_options] = pair;
+        if (queue_options.bounded) {
+            queues_.emplace(priority, std::make_unique<BoundedQueue>(queue_options.capacity.value_or(1024)));
+        } else {
+            queues_.emplace(priority, std::make_unique<UnboundedQueue>());
         }
     });
-}
-
-void PriorityQueue::push(TaskPriority priority, Task task){
-    if(tasks_queue_.contains(priority)){
-        
-    }else{
-        throw std::logic_error("Unknown TaskPriority");
-    }
 }
 // block on pop until shutdown is called
 // after that return std::nullopt on empty queue
 std::optional<Task> PriorityQueue::pop();
 
-void PriorityQueue::shutdown();
+void PriorityQueue::push(TaskPriority priority, std::function<void()> task) {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (queues_.contains(priority)) {
+            queues_.at(priority)->push(std::move(task));
+        }
+    }
+    cv_.notify_one();
+}
+
+void PriorityQueue::shutdown() {
+    is_shutdown_ = true;
+    cv_.notify_all();
+}
+
+std::optional<std::function<void()>> PriorityQueue::pop() {
+    std::unique_lock<std::mutex> lock(mutex_);
+
+    while (true) {
+        for (auto const& [priority, queue] : queues_) {
+            if (auto task = queue->try_pop()) {
+                return task;
+            }
+        }
+
+        if (is_shutdown_) {
+            return std::nullopt;
+        }
+
+        cv_.wait(lock);
+    }
+}
 
 PriorityQueue::~PriorityQueue();
 } // namespace dispatcher::queue

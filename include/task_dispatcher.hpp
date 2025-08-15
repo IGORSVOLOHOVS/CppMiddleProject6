@@ -11,7 +11,12 @@ namespace dispatcher {
 class TaskDispatcher {
     // здесь ваш код
 public:
-    // TaskDispatcher(size_t thread_count, ?);
+    explicit TaskDispatcher(size_t thread_count,
+                            const std::flat_map<TaskPriority, queue::QueueOptions>&
+                            tasks_options = {
+                                {TaskPriority::High, {true, 1000}},
+                                {TaskPriority::Normal, {false, std::nullopt}}
+                            });
 
     void schedule(TaskPriority priority, std::function<void()> task);
     ~TaskDispatcher();
