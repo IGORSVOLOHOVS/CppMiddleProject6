@@ -43,12 +43,12 @@ TEST(PriorityQueueTest, PopBlocksOnEmpty) {
     std::jthread t([&]() {
         if (auto task = pq.pop()) {
             std::invoke(task.value());
-            task_popped = true;
+            task_popped.store(true, std::memory_order_release);
         }
     });
 
     std::this_thread::sleep_for(100ms);
-    ASSERT_FALSE(task_popped);
+    ASSERT_FALSE(task_popped.load(std::memory_order_acquire));
 
     pq.push(TaskPriority::Normal, [] {});
 }
@@ -61,16 +61,16 @@ TEST(PriorityQueueTest, Shutdown) {
     std::jthread t([&]() {
         auto task = pq.pop();
         ASSERT_FALSE(task.has_value());
-        thread_unblocked = true;
+        thread_unblocked.store(true, std::memory_order_release);
     });
 
     std::this_thread::sleep_for(50ms);
-    ASSERT_FALSE(thread_unblocked);
+    ASSERT_FALSE(thread_unblocked.load(std::memory_order_acquire));
 
     pq.shutdown();
     t.join();
     
-    ASSERT_TRUE(thread_unblocked);
+    ASSERT_TRUE(thread_unblocked.load(std::memory_order_acquire));
     ASSERT_FALSE(pq.pop().has_value());
 }
 

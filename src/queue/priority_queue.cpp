@@ -28,7 +28,7 @@ void PriorityQueue::push(TaskPriority priority, Task task) {
 }
 
 void PriorityQueue::shutdown() {
-    is_shutdown_ = true;
+    is_shutdown_.store(true, std::memory_order_release);
     cv_.notify_all();
 }
 
@@ -42,7 +42,7 @@ std::optional<Task> PriorityQueue::pop() {
             }
         }
 
-        if (is_shutdown_) {
+        if (is_shutdown_.load(std::memory_order_acquire)) {
             return std::nullopt;
         }
 

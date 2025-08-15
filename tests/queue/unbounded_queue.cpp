@@ -47,7 +47,7 @@ TEST(UnboundedQueueTest, MultiThreaded) {
                 while (!uq.try_pop()) {
                     std::this_thread::yield();
                 }
-                items_popped++;
+                items_popped.fetch_add(1, std::memory_order_relaxed);
             });
     };
     

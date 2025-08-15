@@ -52,7 +52,7 @@ TEST(BoundedQueueTest, MultiThreaded) {
     auto pusher_func = [&]() {
         std::ranges::for_each(std::views::iota(0, items_per_thread),
             [&](int) {
-                bq.push([&] { tasks_executed++; });
+                bq.push([&] { tasks_executed.fetch_add(1, std::memory_order_relaxed); });
             });
     };
 

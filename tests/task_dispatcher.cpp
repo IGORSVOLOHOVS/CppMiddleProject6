@@ -25,7 +25,7 @@ TEST(TaskDispatcherTest, ExecutesTasks) {
         
         auto schedule_and_notify = [&](dispatcher::TaskPriority p) {
             td.schedule(p, [&]() {
-                task_counter++;
+                task_counter.fetch_add(1, std::memory_order_relaxed);
                 cv.notify_one();
             });
         };
