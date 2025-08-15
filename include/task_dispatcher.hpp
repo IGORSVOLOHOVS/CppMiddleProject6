@@ -11,7 +11,7 @@ namespace dispatcher {
 class TaskDispatcher {
 public:
     explicit TaskDispatcher(size_t thread_count,
-                            const std::map<TaskPriority, queue::QueueOptions>&
+                            const std::flat_map<TaskPriority, queue::QueueOptions>&
                             tasks_options = {
                                 {TaskPriority::High, {true, 1000}},
                                 {TaskPriority::Normal, {false, std::nullopt}}
