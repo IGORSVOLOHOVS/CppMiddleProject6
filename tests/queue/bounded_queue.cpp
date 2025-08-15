@@ -2,46 +2,32 @@
 #include <thread>
 #include <vector>
 #include <atomic>
-<<<<<<< HEAD
-#include <functional>
-#include <stdexcept>
-#include <chrono>
-=======
 #include <ranges>
 #include <chrono>
 #include <algorithm>
 #include <functional>
->>>>>>> 6603adc (Refactoring ended)
 
 #include "queue/bounded_queue.hpp"
 
 using namespace dispatcher::queue;
 using namespace std::chrono_literals;
 
-using Task = std::function<void()>;
-
-class BoundedQueueTest : public ::testing::Test {
-protected:
-    std::unique_ptr<BoundedQueue> queue_ptr;
-    const unsigned int capacity = 3;
-
-    void SetUp() override {
-        queue_ptr = std::make_unique<BoundedQueue>(capacity);
-    }
-};
-
-TEST_F(BoundedQueueTest, ConstructorSetsCapacity) {
-    ASSERT_NO_THROW(BoundedQueue(10));
+TEST(BoundedQueueTest, PushAndPop) {
+    BoundedQueue bq(5);
+    bq.push([] {});
+    auto task = bq.try_pop();
+    ASSERT_TRUE(task.has_value());
+    ASSERT_FALSE(bq.try_pop().has_value());
 }
 
-TEST_F(BoundedQueueTest, ThrowsOnZeroCapacity) {
-    ASSERT_THROW(BoundedQueue(0), std::invalid_argument);
-}
+TEST(BoundedQueueTest, RespectsCapacity) {
+    const int capacity = 3;
+    BoundedQueue bq(capacity);
 
     std::ranges::for_each(std::views::iota(0, capacity),
                           [&](int) { bq.push([] {}); });
 
-    { 
+    {
         std::jthread pusher([&]() {
             bq.push([] {});
         });
@@ -50,8 +36,7 @@ TEST_F(BoundedQueueTest, ThrowsOnZeroCapacity) {
 
         auto task = bq.try_pop();
         ASSERT_TRUE(task.has_value());
-
-    } 
+    }
 
     std::ranges::for_each(std::views::iota(0, capacity), [&](int) {
         ASSERT_TRUE(bq.try_pop().has_value());

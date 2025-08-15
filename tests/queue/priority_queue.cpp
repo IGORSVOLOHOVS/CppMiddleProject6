@@ -7,6 +7,7 @@
 #include <map>
 #include <algorithm>
 #include <ranges>
+#include <flat_map>
 
 #include "queue/priority_queue.hpp"
 
@@ -35,7 +36,8 @@ TEST(PriorityQueueTest, HighPriorityFirst) {
 }
 
 TEST(PriorityQueueTest, PopBlocksOnEmpty) {
-    PriorityQueue pq({{TaskPriority::Normal, {false, std::nullopt}}});
+    std::flat_map<TaskPriority, QueueOptions> options = {{TaskPriority::Normal, {false, std::nullopt}}};
+    PriorityQueue pq(options);
     std::atomic<bool> task_popped = false;
 
     std::jthread t([&]() {
@@ -52,7 +54,8 @@ TEST(PriorityQueueTest, PopBlocksOnEmpty) {
 }
 
 TEST(PriorityQueueTest, Shutdown) {
-    PriorityQueue pq({{TaskPriority::High, {false, std::nullopt}}});
+    std::flat_map<TaskPriority, QueueOptions> options = {{TaskPriority::High, {false, std::nullopt}}};
+    PriorityQueue pq(options);
     std::atomic<bool> thread_unblocked = false;
 
     std::jthread t([&]() {
@@ -72,7 +75,8 @@ TEST(PriorityQueueTest, Shutdown) {
 }
 
 TEST(PriorityQueueTest, ShutdownDrainsTasks) {
-    PriorityQueue pq({{TaskPriority::Normal, {false, std::nullopt}}});
+    std::flat_map<TaskPriority, QueueOptions> options = {{TaskPriority::Normal, {false, std::nullopt}}};
+    PriorityQueue pq(options);
     
     std::ranges::for_each(std::views::iota(0, 2), 
         [&](int){ pq.push(TaskPriority::Normal, [] {}); });

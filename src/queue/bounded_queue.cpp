@@ -1,36 +1,25 @@
 #include "queue/bounded_queue.hpp"
-#include <mutex>
-#include <optional>
-#include <stdexcept>
 
 namespace dispatcher::queue {
 
-// здесь ваш код
-BoundedQueue::BoundedQueue(unsigned capacity): capacity_(capacity){
-    if (capacity == 0) 
-    {
-        throw std::invalid_argument("Capacity must be greater than zero.");
-    }
-}
+BoundedQueue::BoundedQueue(unsigned capacity) : capacity_(capacity) {}
 
 void BoundedQueue::push(Task task) {
-    std::unique_lock ul{m_};
-    cv_.wait(ul, [&](){ return queue_.size() < capacity_; });
+    std::unique_lock<std::mutex> lock(mutex_);
+    not_full_cv_.wait(lock, [this] { return queue_.size() < capacity_; });
     queue_.push(std::move(task));
+    not_empty_cv_.notify_one();
 }
 
 std::optional<Task> BoundedQueue::try_pop() {
-    std::lock_guard lg{m_};
-    if(!queue_.empty()){
-        Task task = queue_.front();
-        queue_.pop();
-        cv_.notify_all();
-        return task;
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (queue_.empty()) {
+        return std::nullopt;
     }
-    return std::nullopt;
+    auto task = std::move(queue_.front());
+    queue_.pop();
+    not_full_cv_.notify_one();
+    return task;
 }
 
-BoundedQueue::~BoundedQueue() {}
-
-
-} // namespace dispatcher::queue
+}  // namespace dispatcher::queue

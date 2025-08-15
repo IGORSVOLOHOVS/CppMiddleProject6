@@ -1,13 +1,14 @@
 #include "queue/priority_queue.hpp"
 #include "queue/bounded_queue.hpp"
 #include "queue/unbounded_queue.hpp"
+#include <algorithm>
 #include <ranges>
 
 namespace dispatcher::queue {
 
-PriorityQueue::PriorityQueue(const std::flat_map<TaskPriority, QueueOptions>& options) {
-    std::ranges::for_each(options, [this](const auto& pair) {
-        const auto& [priority, queue_options] = pair;
+PriorityQueue::PriorityQueue(const std::flat_map<TaskPriority, QueueOptions> &options) {
+    std::ranges::for_each(options, [this](const auto &pair) {
+        const auto &[priority, queue_options] = pair;
         if (queue_options.bounded) {
             queues_.emplace(priority, std::make_unique<BoundedQueue>(queue_options.capacity.value_or(1024)));
         } else {
@@ -15,11 +16,8 @@ PriorityQueue::PriorityQueue(const std::flat_map<TaskPriority, QueueOptions>& op
         }
     });
 }
-// block on pop until shutdown is called
-// after that return std::nullopt on empty queue
-std::optional<Task> PriorityQueue::pop();
 
-void PriorityQueue::push(TaskPriority priority, std::function<void()> task) {
+void PriorityQueue::push(TaskPriority priority, Task task) {
     {
         std::lock_guard<std::mutex> lock(mutex_);
         if (queues_.contains(priority)) {
@@ -34,11 +32,11 @@ void PriorityQueue::shutdown() {
     cv_.notify_all();
 }
 
-std::optional<std::function<void()>> PriorityQueue::pop() {
+std::optional<Task> PriorityQueue::pop() {
     std::unique_lock<std::mutex> lock(mutex_);
 
     while (true) {
-        for (auto const& [priority, queue] : queues_) {
+        for (auto const &[priority, queue] : queues_) {
             if (auto task = queue->try_pop()) {
                 return task;
             }
@@ -52,5 +50,4 @@ std::optional<std::function<void()>> PriorityQueue::pop() {
     }
 }
 
-PriorityQueue::~PriorityQueue();
-} // namespace dispatcher::queue
+}  // namespace dispatcher::queue
