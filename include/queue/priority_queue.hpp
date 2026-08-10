@@ -14,7 +14,15 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <condition_variable>
-#include <flat_map>
+// <flat_map> — часть C++23, но в MSVC STL 14.44 этого заголовка ещё нет:
+// libstdc++ 15 его уже отдаёт, cl.exe падает на "cannot open source file".
+// Сама очередь работает на std::map, так что заголовок нужен только тем, кто
+// захочет переключиться; поэтому подключаем его условно, а не убираем.
+#if defined(__has_include)
+#  if __has_include(<flat_map>)
+#    include <flat_map>
+#  endif
+#endif
 
 namespace dispatcher::queue {
 

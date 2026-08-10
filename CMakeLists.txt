@@ -6,6 +6,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)# Добавление флага для генерации compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(MSVC)
+    # Исходники в UTF-8 и с кириллицей в комментариях и строковых литералах.
+    # Без /utf-8 cl.exe читает их в кодовой странице системы (на русской
+    # Windows это 1251), сыплет C4819 и портит литералы вроде "сообщение №".
+    # Один флаг закрывает и вход, и выход: /utf-8 = /source-charset:utf-8
+    # /execution-charset:utf-8.
+    add_compile_options(/utf-8)
+endif()
+
 # Configure local githooks
 execute_process(
     COMMAND git config core.hooksPath .githooks

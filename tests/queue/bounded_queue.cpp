@@ -72,7 +72,15 @@ TEST(BoundedQueueTest, MultiThreaded) {
     c1.join();
     c2.join();
 
-    while(bq.try_pop()) {
+    // Слив остатка должен ещё и выполнять задачу, а не только считать её.
+    // items_pushed растёт внутри самой задачи, поэтому без вызова остаток
+    // попадал в items_popped, но не в items_pushed. Попперы делают ровно
+    // items_per_thread попыток try_pop, и каждая попытка по пустой очереди
+    // сгорает впустую — на Linux пушеры обычно успевают вперёд, на Windows
+    // планировщик отдаёт старт попперам, и ASSERT_EQ(items_pushed, 100)
+    // падал на 50. Гонка была в тесте, а не в очереди.
+    while (auto task = bq.try_pop()) {
+        (*task)();
         items_popped++;
     }
 
