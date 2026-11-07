@@ -1,7 +1,6 @@
 #include <chrono>
 #include <climits>
 #include <iostream>
-#include <print>
 #include <thread>
 
 #include "logger.hpp"
@@ -12,6 +11,7 @@ using namespace dispatcher;
 int main() {
     TaskDispatcher td(std::thread::hardware_concurrency());
     std::vector<std::jthread> threads;
+    threads.reserve(5);
 
     for (int i = 0; i < 5; ++i) {
         threads.emplace_back([&, i]() {

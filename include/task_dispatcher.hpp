@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DISPATCHER_TASK_DISPATCHER_HPP
+#define DISPATCHER_TASK_DISPATCHER_HPP
 
 #include <memory>
 
@@ -11,11 +12,8 @@ namespace dispatcher {
 class TaskDispatcher {
 public:
     explicit TaskDispatcher(size_t thread_count,
-                            const std::map<TaskPriority, queue::QueueOptions>&
-                            tasks_options = {
-                                {TaskPriority::High, {true, 1000}},
-                                {TaskPriority::Normal, {false, std::nullopt}}
-                            });
+                            const std::map<TaskPriority, queue::QueueOptions> &tasks_options = {
+                                {TaskPriority::High, {true, 1000}}, {TaskPriority::Normal, {false, std::nullopt}}});
 
     void schedule(TaskPriority priority, queue::Task task);
     ~TaskDispatcher();
@@ -26,3 +24,5 @@ private:
 };
 
 }  // namespace dispatcher
+
+#endif  // DISPATCHER_TASK_DISPATCHER_HPP
