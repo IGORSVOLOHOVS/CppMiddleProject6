@@ -1,8 +1,9 @@
-#pragma once
+#ifndef DISPATCHER_QUEUE_BOUNDED_QUEUE_HPP
+#define DISPATCHER_QUEUE_BOUNDED_QUEUE_HPP
 #include "queue/queue.hpp"
+#include <condition_variable>
 #include <mutex>
 #include <queue>
-#include <condition_variable>
 
 namespace dispatcher::queue {
 
@@ -12,6 +13,7 @@ class BoundedQueue : public IQueue {
     std::condition_variable not_full_cv_;
     std::condition_variable not_empty_cv_;
     const unsigned capacity_;
+
 public:
     explicit BoundedQueue(unsigned capacity);
 
@@ -23,3 +25,5 @@ public:
 };
 
 }  // namespace dispatcher::queue
+
+#endif  // DISPATCHER_QUEUE_BOUNDED_QUEUE_HPP

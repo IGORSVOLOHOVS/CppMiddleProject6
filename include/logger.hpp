@@ -1,8 +1,8 @@
-#pragma once
+#ifndef DISPATCHER_LOGGER_HPP
+#define DISPATCHER_LOGGER_HPP
 
 #include <cstdio>
 #include <memory>
-#include <mutex>
 #include <string>
 
 class Logger {
@@ -27,3 +27,5 @@ private:
 
     FILE *file_;
 };
+
+#endif  // DISPATCHER_LOGGER_HPP

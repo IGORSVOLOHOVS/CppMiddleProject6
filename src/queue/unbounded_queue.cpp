@@ -20,4 +20,4 @@ std::optional<Task> UnboundedQueue::try_pop() {
     return task;
 }
 
-} // namespace dispatcher::queue
+}  // namespace dispatcher::queue

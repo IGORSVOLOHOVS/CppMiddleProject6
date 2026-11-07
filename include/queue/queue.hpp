@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DISPATCHER_QUEUE_QUEUE_HPP
+#define DISPATCHER_QUEUE_QUEUE_HPP
 #include <functional>
 #include <optional>
 
@@ -19,3 +20,5 @@ public:
 };
 
 }  // namespace dispatcher::queue
+
+#endif  // DISPATCHER_QUEUE_QUEUE_HPP

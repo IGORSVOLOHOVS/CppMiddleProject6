@@ -1,7 +1,7 @@
+#include <atomic>
 #include <gtest/gtest.h>
 #include <thread>
 #include <vector>
-#include <atomic>
 
 #include "queue/bounded_queue.hpp"
 
@@ -23,16 +23,14 @@ TEST(BoundedQueueTest, RespectsCapacity) {
         bq.push([] {});
     }
 
-    std::thread pusher([&]() {
-        bq.push([] {}); 
-    });
+    std::thread pusher([&]() { bq.push([] {}); });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     auto task = bq.try_pop();
     ASSERT_TRUE(task.has_value());
 
-    pusher.join(); 
+    pusher.join();
 
     for (int i = 0; i < capacity; ++i) {
         ASSERT_TRUE(bq.try_pop().has_value());
@@ -55,7 +53,7 @@ TEST(BoundedQueueTest, MultiThreaded) {
     auto popper_func = [&]() {
         for (int i = 0; i < items_per_thread; ++i) {
             auto task = bq.try_pop();
-            if(task) {
+            if (task) {
                 (*task)();
                 items_popped++;
             }

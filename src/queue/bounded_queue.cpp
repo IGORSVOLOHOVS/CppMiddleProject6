@@ -3,7 +3,6 @@
 #include <optional>
 #include <stdexcept>
 
-
 // здесь ваш код
 namespace dispatcher::queue {
 
@@ -27,4 +26,4 @@ std::optional<Task> BoundedQueue::try_pop() {
     return task;
 }
 
-} // namespace dispatcher::queue
+}  // namespace dispatcher::queue

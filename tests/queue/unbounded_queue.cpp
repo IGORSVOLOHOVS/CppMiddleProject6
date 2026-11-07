@@ -1,7 +1,7 @@
+#include <atomic>
 #include <gtest/gtest.h>
 #include <thread>
 #include <vector>
-#include <atomic>
 
 #include "queue/unbounded_queue.hpp"
 
@@ -33,7 +33,8 @@ TEST(UnboundedQueueTest, MultiThreaded) {
     std::atomic<int> items_popped = 0;
 
     std::vector<std::thread> pushers;
-    for(int i = 0; i < 4; ++i) {
+    pushers.reserve(4);
+    for (int i = 0; i < 4; ++i) {
         pushers.emplace_back([&]() {
             for (int j = 0; j < items_per_thread; ++j) {
                 uq.push([] {});
@@ -42,10 +43,11 @@ TEST(UnboundedQueueTest, MultiThreaded) {
     }
 
     std::vector<std::thread> poppers;
-     for(int i = 0; i < 4; ++i) {
+    poppers.reserve(4);
+    for (int i = 0; i < 4; ++i) {
         poppers.emplace_back([&]() {
             for (int j = 0; j < items_per_thread; ++j) {
-                while(!uq.try_pop()) {
+                while (!uq.try_pop()) {
                     std::this_thread::yield();
                 }
                 items_popped++;
@@ -53,8 +55,10 @@ TEST(UnboundedQueueTest, MultiThreaded) {
         });
     }
 
-    for(auto& t : pushers) t.join();
-    for(auto& t : poppers) t.join();
+    for (auto &t : pushers)
+        t.join();
+    for (auto &t : poppers)
+        t.join();
 
     ASSERT_EQ(items_popped, 4 * items_per_thread);
     ASSERT_FALSE(uq.try_pop().has_value());
