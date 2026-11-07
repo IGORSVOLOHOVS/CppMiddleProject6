@@ -1,6 +1,8 @@
-#pragma once
+#ifndef DISPATCHER_QUEUE_UNBOUNDED_QUEUE_HPP
+#define DISPATCHER_QUEUE_UNBOUNDED_QUEUE_HPP
 #include "queue/queue.hpp"
 #include <condition_variable>
+#include <mutex>
 #include <queue>
 
 namespace dispatcher::queue {
@@ -9,6 +11,7 @@ class UnboundedQueue : public IQueue {
     std::queue<Task> queue_;
     std::mutex mutex_;
     std::condition_variable not_empty_cv_;
+
 public:
     explicit UnboundedQueue();
 
@@ -20,3 +23,5 @@ public:
 };
 
 }  // namespace dispatcher::queue
+
+#endif  // DISPATCHER_QUEUE_UNBOUNDED_QUEUE_HPP

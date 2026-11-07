@@ -1,8 +1,8 @@
+#include <atomic>
+#include <chrono>
 #include <gtest/gtest.h>
 #include <thread>
 #include <vector>
-#include <atomic>
-#include <chrono>
 
 #include "queue/priority_queue.hpp"
 
@@ -10,19 +10,20 @@ using namespace dispatcher;
 using namespace dispatcher::queue;
 
 TEST(PriorityQueueTest, HighPriorityFirst) {
-    std::map<TaskPriority, QueueOptions> options = {
-        {TaskPriority::High, {false, std::nullopt}},
-        {TaskPriority::Normal, {false, std::nullopt}}
-    };
+    std::map<TaskPriority, QueueOptions> options = {{TaskPriority::High, {false, std::nullopt}},
+                                                    {TaskPriority::Normal, {false, std::nullopt}}};
     PriorityQueue pq(options);
 
     std::vector<TaskPriority> execution_order;
 
     pq.push(TaskPriority::Normal, [&] { execution_order.push_back(TaskPriority::Normal); });
     pq.push(TaskPriority::High, [&] { execution_order.push_back(TaskPriority::High); });
-    
-    (*pq.pop())();
-    (*pq.pop())();
+
+    for (int popped = 0; popped < 2; ++popped) {
+        if (auto task = pq.pop()) {
+            (*task)();
+        }
+    }
 
     ASSERT_EQ(execution_order.size(), 2);
     ASSERT_EQ(execution_order[0], TaskPriority::High);
@@ -34,7 +35,7 @@ TEST(PriorityQueueTest, PopBlocksOnEmpty) {
     std::atomic<bool> task_popped = false;
 
     std::thread t([&]() {
-        auto task = pq.pop(); 
+        auto task = pq.pop();
         if (task) {
             (*task)();
             task_popped = true;
@@ -54,17 +55,17 @@ TEST(PriorityQueueTest, Shutdown) {
     std::atomic<bool> thread_unblocked = false;
 
     std::thread t([&]() {
-        auto task = pq.pop(); 
-        ASSERT_FALSE(task.has_value()); 
+        auto task = pq.pop();
+        ASSERT_FALSE(task.has_value());
         thread_unblocked = true;
     });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    ASSERT_FALSE(thread_unblocked); 
+    ASSERT_FALSE(thread_unblocked);
 
     pq.shutdown();
     t.join();
-    ASSERT_TRUE(thread_unblocked); 
+    ASSERT_TRUE(thread_unblocked);
     ASSERT_FALSE(pq.pop().has_value());
 }
 

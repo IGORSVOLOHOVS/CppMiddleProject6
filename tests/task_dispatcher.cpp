@@ -1,9 +1,9 @@
-#include <gtest/gtest.h>
-#include <atomic>
-#include <vector>
-#include <mutex>
-#include <condition_variable>
 #include <algorithm>
+#include <atomic>
+#include <condition_variable>
+#include <gtest/gtest.h>
+#include <mutex>
+#include <vector>
 
 #include "task_dispatcher.hpp"
 
@@ -90,7 +90,7 @@ TEST(TaskDispatcherTest, HighPriorityTasksFirst) {
         });
 
         for (size_t i = 0; i < normal_priority_tasks; ++i) {
-            td.schedule(dispatcher::TaskPriority::Normal, [&, i]() {
+            td.schedule(dispatcher::TaskPriority::Normal, [&]() {
                 std::lock_guard<std::mutex> lock(m);
                 execution_order.push_back(dispatcher::TaskPriority::Normal);
                 cv.notify_one();
@@ -98,7 +98,7 @@ TEST(TaskDispatcherTest, HighPriorityTasksFirst) {
         }
 
         for (size_t i = 0; i < high_priority_tasks; ++i) {
-            td.schedule(dispatcher::TaskPriority::High, [&, i]() {
+            td.schedule(dispatcher::TaskPriority::High, [&]() {
                 std::lock_guard<std::mutex> lock(m);
                 execution_order.push_back(dispatcher::TaskPriority::High);
                 cv.notify_one();
