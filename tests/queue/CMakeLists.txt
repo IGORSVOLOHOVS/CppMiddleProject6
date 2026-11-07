@@ -5,12 +5,14 @@ add_executable(${target}
     unbounded_queue.cpp
     priority_queue.cpp
 )
+warn_as_errors(${target})
 
 target_link_libraries(${target}
     PRIVATE
-        GTest::GTest
-        GTest::Main
+        GTest::gtest_main
         queue
 )
 
 add_test(NAME ${target} COMMAND ${target})
+# These tests wait on threads: a hang must fail here, not hold a runner slot for ctest's default 1500 s.
+set_tests_properties(${target} PROPERTIES TIMEOUT 120)
