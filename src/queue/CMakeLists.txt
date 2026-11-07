@@ -3,3 +3,5 @@ add_library(queue
     unbounded_queue.cpp
     priority_queue.cpp
 )
+warn_as_errors(queue)
+target_link_libraries(queue PUBLIC Threads::Threads)
