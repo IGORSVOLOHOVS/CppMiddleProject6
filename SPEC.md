@@ -2,6 +2,25 @@
 
 Восстановлена по коду ветки `dev`, коммит `fddc7b5`, 2026-11-18. Описывает только реализованное поведение; источники указаны как `путь:строка`. Обзор проекта: [docs/README.md](docs/README.md).
 
+<!-- jira-sync:start -->
+Jira: KAN-104
+
+## Tasks
+
+This list is one ticket in Jira project KAN, [KAN-104](https://igorsvolohovs.atlassian.net/browse/KAN-104). Each line is a checkbox there: tick it in Jira and the sync ticks it here; add a checkbox there and it is appended here. Done items are the features described in section 3; open items are what the project declares but the code does not do yet.
+
+- [x] Очереди (section 3.1) <!-- spec-23787efe17 -->
+- [x] Очередь приоритетов (section 3.2) <!-- spec-b28e00fd76 -->
+- [x] Пул потоков (section 3.3) <!-- spec-faee6f2932 -->
+- [x] Диспетчер (section 3.4) <!-- spec-076f5a82d9 -->
+- [x] Журнал и демонстрация (section 3.5) <!-- spec-3fd740dae4 -->
+- [ ] `not_empty_cv_` в обеих очередях получает `notify_one`, но ни один код его не ждёт: (declared, not implemented) <!-- spec-notemptycv-notifyone-9f56584bc0 -->
+- [ ] Каталог git-хуков `.githooks`, на который `CMakeLists.txt:10-14` переключает `core.hooksPath`, в репозитории отсутствует. (declared, not implemented) <!-- spec-git-githooks-cmakelists-txt-10-14-core-hookspath -->
+- [ ] Задача VS Code `GCC: (declared, not implemented) <!-- spec-vs-code-gcc -->
+- [ ] Закомментированная связь с целью `metric` (`src/thread_pool/CMakeLists.txt:5-8`); (declared, not implemented) <!-- spec-metric-src-threadpool-cmakelists-txt-5-8 -->
+
+<!-- jira-sync:end -->
+
 ## 1. Назначение и границы
 
 Библиотека C++23 для выполнения задач `std::function<void()>` пулом потоков с учётом приоритета (`High`, `Normal`) и демонстрационная программа `dispatcher`. Учебный проект из шаблона задания 6-го спринта курса «Мидл разработчик С++» (`README.md:9`).
